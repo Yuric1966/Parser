@@ -325,9 +325,11 @@ namespace interpr
         }
         public dynamic Run()
         {
+            if(Lexems.Count == 0) ProgText = progText;
             Lexem result = Expression();
             if (pos != Lexems.Count)
                 throw new Exception("Ошибка в выражении на позиции: " + Lexems[pos].Content);
+            Lexems.Clear();
             return result.Value;
         }
         /// <summary>
@@ -465,97 +467,6 @@ namespace interpr
             pos++;
             // в противном случае токен должен быть числом
             return next;
-        }
-    }
-
-    public class RecursiveDescentParser
-    {
-        private String[] tokens;
-        private int pos = 0; // индекс текущего токена
-
-        public RecursiveDescentParser(String[] tokens)
-        {
-            this.tokens = tokens;
-        }
-
-        public Double Parse()
-        {
-            double result = Expression();
-            if (pos != tokens.Length)
-                throw new Exception("Ошибка в выражении на позиции: " + tokens[pos]);
-            return result;
-        }
-
-        // E -> T±T±T±T± ... ±T
-        private Double Expression()
-        {
-            // находим первое слагаемое
-            Double first = Term();
-
-            while (pos < tokens.Length)
-            {
-                String aOperator = tokens[pos];
-                if (!aOperator.Equals("+") && !aOperator.Equals("-")) 
-                    break;
-                else
-                    pos++;
-                // находим второе слагаемое (вычитаемое)
-                Double second = Term();
-                if (aOperator.Equals("+")) 
-                    first += second;
-                else
-                    first -= second;
-            }
-            return first;
-        }
-
-        // T -> F*/F*/F*/*/ ... */F
-        private Double Term()
-        {
-            // находим первый множитель
-            Double first = Factor();
-            while (pos < tokens.Length)
-            {
-                String aOperator = tokens[pos];
-                if (!aOperator.Equals("*") && !aOperator.Equals("/")) 
-                    break;
-                else
-                    pos++;
-                // находим второй множитель (делитель)
-                Double second = Factor();
-                if (aOperator.Equals("*")) 
-                    first *= second;
-                else
-                    first /= second;
-            }
-            return first;
-        }
-
-        // F -> N | (E)
-        private Double Factor()
-        {
-            String next = tokens[pos];
-            Double result;
-            if (next.Equals("("))
-            {
-                pos++;
-                // если выражение в скобках, то рекурсивно переходим на обработку подвыражения типа Е
-                result = Expression();
-                String closingBracket;
-                if (pos < tokens.Length)
-                    closingBracket = tokens[pos];
-                else
-                    throw new Exception("Выражение неожиданно закончилось");
-                if (pos < tokens.Length && closingBracket.Equals(")"))
-                {
-                    pos++;
-                    return result;
-                }
-                throw new Exception("ожидалась ')', но пришло: " + closingBracket);
-            }
-            pos++;
-            // в противном случае токен должен быть числом
-            return Double.Parse(next);
         }
     }
 }

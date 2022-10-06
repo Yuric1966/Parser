@@ -17,5 +17,7 @@ parser.FuncAdd("Sum", Sum);
 parser.ProgText = "-1+Sum(a/b,-1)";
 var val = parser.Run();
 Console.WriteLine(parser.ProgText + "= {0}", val);
+val = parser.Run();
+Console.WriteLine(parser.ProgText + "= {0}", val);
 
 
