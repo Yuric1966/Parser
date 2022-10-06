@@ -111,11 +111,11 @@ namespace interpr
         public CallBackFunction Function; // указатель на функцию
         public static Lexem operator + (Lexem lex1, Lexem lex2)
         {
-            if(lex1.Type == lex2.Type)
+            if(lex1.Value.GetType() == lex2.Value.GetType())
             {
-                if(lex1.Type == LexemType.ltDoble) 
+                if(lex1.Value.GetType() == typeof(Double)) 
                     lex1.Value += lex2.Value;
-                else if(lex1.Type == LexemType.ltLiteral)
+                else if(lex1.Value.GetType() == typeof(string))
                     lex1.Value += lex2.Value;
             }
             else throw new Exception("Нельзя сложить строки и числа:" + lex1.Content + " и " + lex2.Content);
@@ -123,21 +123,21 @@ namespace interpr
         }
         public static Lexem operator - (Lexem lex1, Lexem lex2)
         {
-            if ((lex1.Type == lex2.Type) && (lex1.Type == LexemType.ltDoble))
+            if ((lex1.Value.GetType() == lex2.Value.GetType()) && (lex1.Value.GetType() == typeof(System.Double)))
                 lex1.Value -= lex2.Value;
             else throw new Exception("Невозможно вычесть строки:" + lex1.Content + " и " + lex2.Content);
             return lex1;
         }
         public static Lexem operator * (Lexem lex1, Lexem lex2)
         {
-            if ((lex1.Type == lex2.Type) && (lex1.Type == LexemType.ltDoble))
+            if ((lex1.Value.GetType() == lex2.Value.GetType()) && (lex1.Value.GetType() == typeof(System.Double)))
                 lex1.Value *= lex2.Value;
             else throw new Exception("Невозможно умножить строки:" + lex1.Content + " и " + lex2.Content);
             return lex1;
         }
         public static Lexem operator / (Lexem lex1, Lexem lex2)
         {
-            if ((lex1.Type == lex2.Type) && (lex1.Type == LexemType.ltDoble))
+            if ((lex1.Value.GetType() == lex2.Value.GetType()) && (lex1.Value.GetType() == typeof(System.Double)))
                 lex1.Value /= lex2.Value;
             else throw new Exception("Невозможно поделить строки:" + lex1.Content + " и " + lex2.Content);
             return lex1;
@@ -196,7 +196,7 @@ namespace interpr
         /// <param name="value">Значение переменной</param>
         public void VarAdd(string name, double value)
         {
-            Lexem lex = new Lexem() { Name = name, Value = value };
+            Lexem lex = new Lexem() { Name = name, Value = value, Type = LexemType.ltVariable };
             Variables.Add(lex);
         }
         /// <summary>
@@ -353,7 +353,6 @@ namespace interpr
                 if (first.Type == LexemType.ltFunction)
                 {
                     Lexem param = Term(addToStack: true);
-                    //first.Parameters.Add(param.Value);
                     first = first.Function(stack);
                     if(minusFirst && (first.Type == LexemType.ltDoble))
                         first.Value = -first.Value;
@@ -396,21 +395,32 @@ namespace interpr
         // T -> F*/F*/F*/*/ ... */F
         private Lexem Term(bool addToStack = false)
         {
+            bool minusFirst = false;
             // находим первый множитель
             Lexem first = Factor(addToStack);
             while (pos < Lexems.Count)
             {
-                Lexem aOperator = Lexems[pos];
-                if (!aOperator.Content.Equals("*") && !aOperator.Content.Equals("/"))
-                    break;
+                if (first.Type == LexemType.ltFunction)
+                {
+                    Lexem param = Term(addToStack: true);
+                    first = first.Function(stack);
+                    if (minusFirst && (first.Type == LexemType.ltDoble))
+                        first.Value = -first.Value;
+                }
                 else
-                    pos++;
-                // находим второй множитель (делитель)
-                Lexem second = Factor();
-                if (aOperator.Content.Equals("*"))
-                    first *= second;
-                else
-                    first /= second;
+                {
+                    Lexem aOperator = Lexems[pos];
+                    if (!aOperator.Content.Equals("*") && !aOperator.Content.Equals("/"))
+                        break;
+                    else
+                        pos++;
+                    // находим второй множитель (делитель)
+                    Lexem second = Factor();
+                    if (aOperator.Content.Equals("*"))
+                        first *= second;
+                    else
+                        first /= second;
+                }
             }
             return first;
         }
